@@ -1,0 +1,22 @@
+# Port on which Config Server will run
+server:
+  port: 8888
+
+spring:
+  application:
+    # Name of the Config Server application
+    name: config-server
+
+  # Activate native profile to read configs from local filesystem
+  profiles:
+    active: native
+
+  cloud:
+    config:
+      server:
+        native:
+          # Path to external configuration repository
+          # '../config-repo' means:
+          # go one level up from config-server folder
+          # and read files from config-repo directory
+          search-locations: file:../config-repo
