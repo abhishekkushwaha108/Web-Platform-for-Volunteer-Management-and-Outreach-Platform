@@ -19,4 +19,4 @@ spring:
           # '../config-repo' means:
           # go one level up from config-server folder
           # and read files from config-repo directory
-          search-locations: file:../config-repo
+          search-locations: file:/Users/abhishek/Web-Platform-for-Volunteer-Management-and-Outreach_Feb_Batch-8_2026/java-spring-boot/config-repo
