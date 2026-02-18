@@ -1,5 +1,6 @@
 package com.ak.usermanagement.service;
 
+import com.ak.usermanagement.exception.UserNotFoundException;
 import com.ak.usermanagement.model.User;
 import com.ak.usermanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
