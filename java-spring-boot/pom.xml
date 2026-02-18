@@ -19,15 +19,19 @@
     </parent>
 
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.release>21</maven.compiler.release>
+        <!-- Java version used across all modules -->
+        <java.version>17</java.version>
+        <!-- Spring Cloud BOM version (required for Eureka, Config, Gateway) -->
         <spring-cloud.version>2023.0.1</spring-cloud.version>
     </properties>
 
+    
     <!-- Modules -->
     <modules>
         <module>config-server</module>
         <module>user-management-service</module>
+        <module>eureka-server</module>
+        <module>api-gateway</module>
     </modules>
 
     <!-- Spring Cloud BOM -->
@@ -46,27 +50,17 @@
     <build>
         <pluginManagement>
             <plugins>
-
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.11.0</version>
                     <configuration>
-                        <release>21</release>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>1.18.32</version>
-                            </path>
-                        </annotationProcessorPaths>
+                        <release>17</release>
                     </configuration>
                 </plugin>
-
             </plugins>
         </pluginManagement>
     </build>
-
 
 
 </project>
