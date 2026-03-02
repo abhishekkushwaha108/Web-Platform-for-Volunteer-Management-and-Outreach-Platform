@@ -22,7 +22,7 @@
         <!-- Java version used across all modules -->
         <java.version>17</java.version>
         <!-- Spring Cloud BOM version (required for Eureka, Config, Gateway) -->
-        <spring-cloud.version>2023.0.1</spring-cloud.version>
+        <spring-cloud.version>2023.0.5</spring-cloud.version>
     </properties>
 
     
@@ -32,6 +32,8 @@
         <module>user-management-service</module>
         <module>eureka-server</module>
         <module>api-gateway</module>
+        <module>identity-service</module>
+        <module>event-management-service</module>
     </modules>
 
     <!-- Spring Cloud BOM -->
@@ -45,6 +47,7 @@
                 <scope>import</scope>
             </dependency>
         </dependencies>
+        
     </dependencyManagement>
 
     <build>
