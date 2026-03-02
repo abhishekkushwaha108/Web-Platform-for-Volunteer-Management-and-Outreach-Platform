@@ -23,6 +23,11 @@ spring:
           filters:
             - StripPrefix=0
 
+        - id: event-management-service
+          uri: lb://EVENT-MANAGEMENT-SERVICE
+          predicates:
+            - Path=/api/events/**, /api/participations/**, /api/notifications/**
+
 eureka:
   client:
     service-url:
