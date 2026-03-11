@@ -17,10 +17,17 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @Column(name = "to_user_id")
     private String toUserId;
+
     private String type;
+
     private String message;
+
+    @Column(name = "is_read")
     private boolean read;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Embedded

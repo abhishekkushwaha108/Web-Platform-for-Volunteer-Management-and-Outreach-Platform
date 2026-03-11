@@ -16,7 +16,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
 
-    // SIGNUP NOTIFICATION
     @Override
     public void notifySignup(String organizerId,
                              String volunteerId,
@@ -38,7 +37,6 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
     }
 
-    // CANCEL NOTIFICATION
     @Override
     public void notifyCancel(String organizerId,
                              String volunteerId,
@@ -60,16 +58,16 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
     }
 
-    // GET USER NOTIFICATIONS
     @Override
     public List<NotificationResponse> getNotifications(String userId) {
-        return notificationRepository.findByToUserId(userId)
-                .stream()
-                .map(this::map)
+
+        List<Notification> notifications = notificationRepository.findByToUserId(userId);
+
+        return notifications.stream()
+                .map(this::mapToResponse)
                 .toList();
     }
 
-    // MARK AS READ
     @Override
     public NotificationResponse markAsRead(String id) {
 
@@ -78,17 +76,40 @@ public class NotificationServiceImpl implements NotificationService {
 
         notification.setRead(true);
 
-        return map(notificationRepository.save(notification));
+        notificationRepository.save(notification);
+
+        return mapToResponse(notification);
     }
 
-    // MAPPER
-    private NotificationResponse map(Notification n) {
-        return NotificationResponse.builder()
-                .id(n.getId())
-                .type(n.getType())
-                .message(n.getMessage())
-                .read(n.isRead())
-                .createdAt(n.getCreatedAt())
-                .build();
+    @Override
+    public NotificationResponse getNotificationById(String id) {
+
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+
+        return mapToResponse(notification);
+    }
+
+    @Override
+    public void markAllAsRead(String userId) {
+
+        List<Notification> notifications = notificationRepository.findByToUserId(userId);
+
+        notifications.forEach(notification -> notification.setRead(true));
+
+        notificationRepository.saveAll(notifications);
+    }
+
+    private NotificationResponse mapToResponse(Notification n) {
+
+        return new NotificationResponse(
+                n.getId(),
+                n.getType(),
+                n.getMessage(),
+                n.isRead(),
+                n.getCreatedAt(),
+                n.getResource() != null ? n.getResource().getEventId() : null,
+                n.getResource() != null ? n.getResource().getParticipationId() : null
+        );
     }
 }

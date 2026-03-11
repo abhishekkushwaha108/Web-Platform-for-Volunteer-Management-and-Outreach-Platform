@@ -1,6 +1,6 @@
 package com.ak.eventmanagementservice.notifications.entity;
 
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Embeddable
@@ -11,6 +11,9 @@ import lombok.*;
 @Builder
 public class NotificationResource {
 
+    @Column(name = "event_id")
     private String eventId;
+
+    @Column(name = "participation_id")
     private String participationId;
 }
