@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Vite
+.vite/
+frontend/.vite/
+
+# Node
+node_modules/
+dist/
