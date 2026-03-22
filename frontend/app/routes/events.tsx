@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useAuth } from "~/context/AuthContext";
 import AuthGuard from "~/components/AuthGuard";
-import { getEvents, type EventResponse } from "~/services/events";
+import NotificationBell from "~/components/NotificationBell";
+
+import {
+  getEvents,
+  enrollEvent,
+  unenrollEvent,
+  getParticipants,
+  type EventResponse,
+  type ParticipantResponse
+} from "~/services/events";
 
 export function meta() {
   return [
@@ -12,35 +21,80 @@ export function meta() {
 }
 
 function EventsContent() {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [events, setEvents] = useState<EventResponse[]>([]);
+  const isAdmin = user?.role === "ADMIN";
+  const isOrganizer = user?.role === "ORGANIZER";
+  const canManageEvents = isAdmin || isOrganizer;
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"all" | "upcoming">("all");
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError("");
-    getEvents(filter === "upcoming" ? true : undefined, controller.signal)
-      .then((data) => {
-        if (!controller.signal.aborted) {
-          setEvents(data);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) {
-          setError(err.response?.data?.message || "Failed to load events.");
-          setLoading(false);
-        }
-      });
-    return () => controller.abort();
-  }, [filter, retryCount]);
+  const controller = new AbortController();
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const apiEvents = await getEvents(
+        filter === "upcoming" ? true : undefined,
+        controller.signal
+      );
+
+      setEvents(apiEvents);
+
+      setLoading(false);
+    } catch (err: any) {
+      if (!controller.signal.aborted) {
+        setError(err.response?.data?.message || "Failed to load events.");
+        setLoading(false);
+      }
+    }
+  };
+
+  fetchEvents();
+
+  return () => controller.abort();
+}, [filter, retryCount]);
 
   function fetchEvents() {
     setRetryCount((c) => c + 1);
+  }
+
+  async function handleEnroll(eventId: string) {
+    try {
+      await enrollEvent(eventId);
+
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === eventId
+            ? { ...e, currentVolunteers: e.currentVolunteers + 1 }
+            : e
+        )
+      );
+    } catch {
+      alert("Failed to enroll");
+    }
+  }
+
+  async function handleUnenroll(eventId: string) {
+    try {
+      await unenrollEvent(eventId);
+
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === eventId
+            ? { ...e, currentVolunteers: e.currentVolunteers - 1 }
+            : e
+        )
+      );
+    } catch {
+      alert("Failed to unenroll");
+    }
   }
 
   function formatDate(dateStr: string) {
@@ -99,8 +153,14 @@ function EventsContent() {
     }
   }
 
-  const spotsPercentage = (e: EventResponse) =>
-    e.maxVolunteers > 0 ? Math.round((e.currentVolunteers / e.maxVolunteers) * 100) : 0;
+  const spotsPercentage = (e: EventResponse) => {
+    const max = e.maxVolunteers ?? 0;
+    const current = e.currentVolunteers ?? 0;
+
+    if (max === 0) return 0;
+
+    return Math.round((current / max) * 100);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -134,6 +194,19 @@ function EventsContent() {
             </div>
 
             <div className="flex items-center gap-4">
+
+              {/* 🔔 Notification */}
+              <NotificationBell />
+
+              {/* 👤 Profile Button */}
+              <button
+                onClick={() => navigate("/profile")}
+                className="text-sm px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Profile
+              </button>
+
+              {/* Existing user info */}
               <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                 <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
                   <span className="text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
@@ -167,6 +240,16 @@ function EventsContent() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+
+          {canManageEvents && (
+            <button
+              onClick={() => navigate("/create-event")}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+            >
+              + Create Event
+            </button>
+          )}
+
             <button
               onClick={() => setFilter("all")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -238,13 +321,14 @@ function EventsContent() {
           </div>
         )}
 
+        <div className="flex-1"></div>
         {/* Events Grid */}
         {!loading && events.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
               <div
                 key={event.id}
-                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700 transition-all flex flex-col h-full"
               >
                 {/* Card Header */}
                 <div className="p-6 pb-4">
@@ -316,8 +400,7 @@ function EventsContent() {
                       </div>
                     )}
                   </div>
-                </div>
-
+                  </div>
                 {/* Card Footer - Volunteer spots */}
                 {event.maxVolunteers > 0 && (
                   <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
@@ -344,8 +427,48 @@ function EventsContent() {
                     )}
                   </div>
                 )}
+
+                {/* Card Actions */}
+                <div className="mt-auto px-6 pb-4 pt-4">
+                  <div className="flex gap-2">
+                  <button
+                    disabled={
+                      event.maxVolunteers > 0 &&
+                      (event.currentVolunteers ?? 0) >= event.maxVolunteers
+                    }
+                    onClick={() => handleEnroll(event.id)}
+                    className={`flex-1 py-2 text-sm font-medium rounded-md text-white transition ${
+                      event.maxVolunteers > 0 &&
+                      (event.currentVolunteers ?? 0) >= event.maxVolunteers
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-emerald-600 hover:bg-emerald-700"
+                    }`}
+                  >
+                    {event.maxVolunteers > 0 &&
+                    (event.currentVolunteers ?? 0) >= event.maxVolunteers
+                      ? "Full"
+                      : "Enroll"}
+                  </button>
+
+                  <button
+                    onClick={() => handleUnenroll(event.id)}
+                    className="flex-1 py-2 text-sm font-medium rounded-md bg-gray-600 text-white hover:bg-gray-700 transition"
+                  >
+                    Unenroll
+                  </button>
+
+                  {canManageEvents && (
+                    <button
+                      onClick={() => navigate(`/participants?eventId=${event.id}`)}
+                      className="py-2 px-3 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
+                    >
+                      Participants
+                    </button>
+                  )}
+                </div>
+                </div>
               </div>
-            ))}
+            ))}   
           </div>
         )}
       </div>
