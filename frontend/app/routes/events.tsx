@@ -4,6 +4,7 @@ import { useAuth } from "~/context/AuthContext";
 import AuthGuard from "~/components/AuthGuard";
 import NotificationBell from "~/components/NotificationBell";
 
+
 import {
   getEvents,
   enrollEvent,
@@ -21,6 +22,8 @@ export function meta() {
 }
 
 function EventsContent() {
+  const [message, setMessage] = useState("");
+  const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isAdmin = user?.role === "ADMIN";
@@ -76,6 +79,8 @@ function EventsContent() {
             : e
         )
       );
+      setMessage("Successfully enrolled in the event ✅");
+      setActiveEventId(eventId); 
     } catch {
       alert("Failed to enroll");
     }
@@ -92,6 +97,8 @@ function EventsContent() {
             : e
         )
       );
+      setMessage("You have been unenrolled from the event ⚠️");
+      setActiveEventId(eventId); 
     } catch {
       alert("Failed to unenroll");
     }
@@ -161,6 +168,17 @@ function EventsContent() {
 
     return Math.round((current / max) * 100);
   };
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage("");
+        setActiveEventId(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -320,8 +338,6 @@ function EventsContent() {
             )}
           </div>
         )}
-
-        <div className="flex-1"></div>
         {/* Events Grid */}
         {!loading && events.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -356,6 +372,21 @@ function EventsContent() {
                       {event.description}
                     </p>
                   )}
+
+                  {activeEventId === event.id && message && (
+                      <div className="mb-3 px-3 py-2 rounded-lg bg-emerald-100 text-emerald-800 text-sm flex justify-between items-center">
+                        {message}
+                        <button
+                          onClick={() => {
+                            setMessage("");
+                            setActiveEventId(null);
+                          }}
+                          className="ml-3 text-xs underline"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    )}
 
                   {/* Details */}
                   <div className="space-y-2.5">
